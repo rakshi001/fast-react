@@ -17,26 +17,6 @@ User → React UI → Zustand Store → Axios API Client
          ↕ HTTP (REST)
 FastAPI Routes → Pydantic Validation → Service Layer → Repository Layer → SQLAlchemy → PostgreSQL
 ```
-```mermaid
-graph TD
-  subgraph Frontend["Frontend (React + TypeScript)"]
-    Pages --> Components
-    Pages --> Store["Zustand Store"]
-    Store --> API["API Client (axios)"]
-  end
-
-  subgraph Backend["Backend (FastAPI + Python)"]
-    Routes["API Routes"] --> Services
-    Services --> Repositories
-    Repositories --> Models["SQLAlchemy Models"]
-    Routes --> Schemas["Pydantic Schemas"]
-  end
-
-  API -->|"HTTP REST"| Routes
-  Models -->|"ORM"| DB[(PostgreSQL)]
-```
-
-
 ## Getting Started
 
 ### Prerequisites
@@ -44,34 +24,27 @@ graph TD
 - Python 3.10+, uv
 - Docker & Docker Compose
 
-### 1. Start the Database
+### Running the Application
+
+This entire full-stack application is completely dockerized. You do not need to start the frontend, backend, or database separately.
+
 ```bash
-cd infrastructure
-docker-compose up -d
+# From the fastReact root directory:
+docker compose up --build
 ```
 
-### 2. Start the Backend
-```bash
-cd backend
-uv run uvicorn app.main:app --reload
-```
-Backend runs at: http://localhost:8000  
-API docs at: http://localhost:8000/docs
-
-### 3. Start the Frontend
-```bash
-cd frontend
-pnpm dev
-```
-Frontend runs at: http://localhost:5173
+**Services will be available at:**
+- 🎨 **Frontend (React):** http://localhost:5173
+- ⚙️ **Backend API:** http://localhost:8000
+- 📖 **API Interactive Docs (Swagger):** http://localhost:8000/docs
+- 🗄️ **Database Manager (Adminer):** http://localhost:8080 (System: PostgreSQL, Server: db, User: kw_user, Pass: kw_password)
 
 ## Project Structure
 
 ```
-project-root/
-├── frontend/          # React + TypeScript application
+fastReact/
+├── frontend/          # React + TypeScript + Vite application
 ├── backend/           # FastAPI + Python application
-├── infrastructure/    # Docker configuration
-├── docs/              # Architecture documentation
+├── docker-compose.yml # Orchestrates Frontend, Backend, PostgreSQL, and Adminer
 └── README.md
 ```
