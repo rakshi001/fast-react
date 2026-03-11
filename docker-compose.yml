@@ -83,8 +83,20 @@ services:
         # VOLUME TRICK: This prevents your local computer's 'node_modules' folder from
         # overriding the 'node_modules' that Docker installed internally during the build.
 
+  # ---------------------------------------------------------
+  # 4. Adminer (Simple Web-based Database Manager)
+  # ---------------------------------------------------------
+  # This provides a simple web interface to view your database.
+  # No external apps like DBeaver required! Just go to http://localhost:8080
+  adminer:
+    image: adminer
+    container_name: fastreact_adminer
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+
 # Define the named volume that persists our database data
 volumes:
   postgres_data:
-
-
