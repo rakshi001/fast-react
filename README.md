@@ -17,6 +17,25 @@ User → React UI → Zustand Store → Axios API Client
          ↕ HTTP (REST)
 FastAPI Routes → Pydantic Validation → Service Layer → Repository Layer → SQLAlchemy → PostgreSQL
 ```
+```mermaid
+graph TD
+  subgraph Frontend["Frontend (React + TypeScript)"]
+    Pages --> Components
+    Pages --> Store["Zustand Store"]
+    Store --> API["API Client (axios)"]
+  end
+
+  subgraph Backend["Backend (FastAPI + Python)"]
+    Routes["API Routes"] --> Services
+    Services --> Repositories
+    Repositories --> Models["SQLAlchemy Models"]
+    Routes --> Schemas["Pydantic Schemas"]
+  end
+
+  API -->|"HTTP REST"| Routes
+  Models -->|"ORM"| DB[(PostgreSQL)]
+```
+
 
 ## Getting Started
 
