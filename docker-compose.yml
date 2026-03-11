@@ -1,0 +1,90 @@
+# ============================================================================
+# Full Stack Docker Compose Configuration
+# ============================================================================
+#
+# PURPOSE:
+#   Docker Compose orchestrates multiple containers. Instead of building and
+#   starting the DB, Backend, and Frontend separately, this file links them all
+#   together. It creates a private virtual network so they can talk to each other.
+#
+# KEY CONCEPT: "Depends On"
+#   Containers start in a specific order: DB starts first -> Backend starts and
+#   connects to the DB -> Frontend starts and connects to the Backend.
+#
+# KEY CONCEPT: "Volumes"
+#   Containers are ephemeral (data inside is lost when they stop). Volumes map
+#   a folder on your host machine to a folder inside the container.
+#   - For the DB: We map the data folder so database records survive restarts.
+#   - For Backend/Frontend: We map our source code folders so that when you
+#     save a file on your computer, it instantly updates inside the container (hot-reloading!).
+# ============================================================================
+
+services:
+  # ---------------------------------------------------------
+  # 1. PostgreSQL Database Service
+  # ---------------------------------------------------------
+  db:
+    image: postgres:16-alpine
+    container_name: fastreact_db
+    environment:
+      POSTGRES_USER: kw_user
+      POSTGRES_PASSWORD: kw_password
+      POSTGRES_DB: knowledge_workspace
+    ports:
+      - "5432:5432" # Maps your host's port 5432 to the container's port 5432
+    volumes:
+      - postgres_data:/var/lib/postgresql/data # Links the internal DB data to a permanent Docker volume
+    restart: unless-stopped
+
+  # ---------------------------------------------------------
+  # 2. Python FastAPI Backend Service
+  # ---------------------------------------------------------
+  backend:
+    build:
+      context: ./backend # Tells Docker where to find the backend Dockerfile
+      dockerfile: Dockerfile
+    container_name: fastreact_backend
+    environment:
+      # NETWORKING MAGIC: Notice we use "@db:5432". Because Docker Compose puts these
+      # containers on the same virtual network, the backend can reach the PostgreSQL container
+      # simply by using its service name ("db") as the host name!
+      - DATABASE_URL=postgresql://kw_user:kw_password@db:5432/knowledge_workspace
+      - JWT_SECRET_KEY=your-super-secret-key-change-this-in-production
+      - JWT_ALGORITHM=HS256
+      - JWT_ACCESS_TOKEN_EXPIRE_MINUTES=60
+    ports:
+      - "8000:8000" # Exposes the API to your host browser at localhost:8000
+    depends_on:
+      - db # Don't start the backend until the DB is running
+    restart: unless-stopped
+    volumes:
+      - ./backend:/app # HOT RELOADING: Maps your local /backend folder to /app in the container
+
+  # ---------------------------------------------------------
+  # 3. React Vite Frontend Service
+  # ---------------------------------------------------------
+  frontend:
+    build:
+      context: ./frontend # Tells Docker where to find the frontend Dockerfile
+      dockerfile: Dockerfile
+    container_name: fastreact_frontend
+    environment:
+      # Because the React app runs *in the user's browser* (not inside the Docker network),
+      # it needs to make requests to "localhost" (your host machine), which forwards to the backend container.
+      - VITE_API_URL=http://localhost:8000
+    ports:
+      - "5173:5173" # Exposes Vite to your host browser at localhost:5173
+    depends_on:
+      - backend # Don't start frontend until backend is running
+    restart: unless-stopped
+    volumes:
+      - ./frontend:/app # HOT RELOADING: Maps your local /frontend folder to /app in the container
+      - /app/node_modules
+        # VOLUME TRICK: This prevents your local computer's 'node_modules' folder from
+        # overriding the 'node_modules' that Docker installed internally during the build.
+
+# Define the named volume that persists our database data
+volumes:
+  postgres_data:
+
+
